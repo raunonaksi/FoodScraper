@@ -38,10 +38,14 @@ function scrapeFood() {
 	    //success
 	    let vilde = $('.offer','#2087492733', html).text();
 	    let rp9 = $('.offer','#2087492794', html).text();
+	    let bigben = $('.offer','#27', html).text();
 	    let tartukohvik = $('.offer','#36', html).text();
-	    let foods = "1: " + vilde + "\n" +
-	    "2: " + rp9 + "\n" +
-	    "3: " + tartukohvik + "\n";
+	    let illegaard = $('.offer','#2087492610', html).text();
+	    let foods = "1 Vilde ja Vine: " + vilde + "\n" +
+	    "2 Pubi RP9: " + rp9 + "\n" +
+	    "3 Big Ben Pubi: " + bigben + "\n" + 
+	    "4 Tartu Kohvik: " + tartukohvik + "\n" + 
+	    "5 Illegaard: " + illegaard + "\n";
 	    sendEmail(foods);
 	  })
 	  .catch(function(err){
@@ -64,7 +68,7 @@ function sendEmail(emailBody) {
 	let mailOptions = {
 	  from: emailFrom,
 	  to: emailTo,
-	  subject: 'Sending some foods TEST!',
+	  subject: 'Tänased lõuna pakkumised',
 	  text: emailBody
 	};
 
