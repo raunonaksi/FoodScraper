@@ -1,0 +1,24 @@
+{
+  "name": "foodscraper",
+  "version": "1.0.0",
+  "description": "Get foods for a lunch",
+  "main": "scrapefood.js",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "http": "^0.0.0",
+    "nodemailer": "^4.6.8",
+    "puppeteer": "^1.10.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "rauno.naksi"
+  },
+  "author": "Rauno Näksi",
+  "license": "ISC"
+}
