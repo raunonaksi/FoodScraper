@@ -1,4 +1,5 @@
 const rp = require('request-promise');
+const tough = require('tough-cookie');
 const $ = require('cheerio');
 const nodemailer = require('nodemailer');
 const url = 'https://xn--pevapakkumised-5hb.ee/tartu';
@@ -6,6 +7,9 @@ const time = '11:00';
 const emailFrom = 'sendFrom@gmail.com';
 const emailFromPassword = 'password';
 const emailTo = 'sendFoodTo@fleep.io';
+const fleepUser = 'userEmail@gmail.com';
+const fleepPassword = 'password';
+const fleepConversationId = 'conv_id';
 
 function scheduler(time, triggerThis) {
 	// get hour and minute from hour:minute param received, ex.: '16:00'
@@ -32,7 +36,7 @@ function scheduler(time, triggerThis) {
 	}, firstTriggerAfterMs);
 };
 
-function scrapeFood() {
+function scrapeFood(toWhere) {
 	rp(url)
 	  .then(function(html){
 	    //success
@@ -46,11 +50,78 @@ function scrapeFood() {
 	    "3 Big Ben Pubi: " + bigben + "\n" + 
 	    "4 Tartu Kohvik: " + tartukohvik + "\n" + 
 	    "5 Illegaard: " + illegaard + "\n";
-	    sendEmail(foods);
+	    console.log("Scraped food");
+	    if (toWhere == "Email") {
+	        sendEmail(foods);
+	    } else {//Default value is fleep
+	        logAndSendDataToFleep(foods);
+	    }
 	  })
 	  .catch(function(err){
 	    console.log(err);
 	  });
+};
+
+
+function logAndSendDataToFleep(foods) {
+    var _include_headers = function(body, response, resolveWithFullResponse) {
+      return {'headers': response.headers, 'data': body};
+    };
+
+    var options = {
+        method: 'POST',
+        uri: 'https://fleep.io/api/account/login',
+        body: {
+            "email": fleepUser, "password": fleepUser
+        },
+        json: true,
+        transform: _include_headers,
+    };
+
+    rp(options)
+      .then(function (response) {
+        let ticket = response.data.ticket;
+        let cookie = (response.headers['set-cookie'][0]).split(";")[0].split("=")[1];
+        console.log("Logged into Fleep!");
+        sendMessageToFleep(ticket,cookie,foods);
+       })
+      .catch(function (err) {
+        // POST failed...
+        console.log(err);
+      });
+};
+
+function sendMessageToFleep(ticket,cookie,foods) {
+    let cookieObject = new tough.Cookie({
+        key: "token_id",
+        value: cookie,
+        domain: 'fleep.io',
+    });
+    // Put cookie in an jar which can be used across multiple requests
+    var cookiejar = rp.jar();
+    cookiejar.setCookie(cookieObject, 'https://fleep.io');
+    // ...all requests to https://fleep.io will include the cookie
+
+     var sendMessageOptions = {
+         method: 'POST',
+         uri: 'https://fleep.io/api/message/send/' + fleepConversationId,
+         body: {
+         "ticket": ticket,
+         "message": foods
+         },
+         json: true,
+         jar: cookiejar
+     };
+
+
+    rp(sendMessageOptions)
+      .then(function (parsedBody) {
+            console.log("Food sent to Fleep!")
+        })
+      .catch(function (err) {
+        // POST failed...
+        console.log(err)
+      });
 };
 
 
@@ -81,4 +152,9 @@ function sendEmail(emailBody) {
 	});
 };
 
-scheduler(time,scrapeFood);
+//Email or directly to Fleep. Fleep is default one!
+function main(method){
+      scheduler(time,scrapeFood(method));
+}
+
+main("Fleep");
