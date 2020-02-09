@@ -9,7 +9,17 @@ const emailFromPassword = 'password';
 const emailTo = 'sendFoodTo@fleep.io';
 const fleepUser = 'userEmail@gmail.com';
 const fleepPassword = 'password';
-const fleepConversationId = 'conv_id';
+const fleepConversationId = 'convID';
+const fleepWebHookId = 'HookID';
+const foodProviders = 	[
+						  {"name":"Vilde ja Vine", "divId":"#2087492733"},
+						  {"name":"Pubi RP9", "divId":"#2087492794"},
+						  {"name":"Big Ben Pubi", "divId":"#27"},
+						  {"name":"Illegaard", "divId":"#2087492610"},
+						  {"name":"Sheriff Saloon", "divId":"#3456"},
+						  {"name":"Tartu Kohvik", "divId":"#36"},
+						  {"name":"Gustav Gastro Cafe", "divId":"#190"}
+						];
 
 function scheduler(time, triggerThis) {
 	// get hour and minute from hour:minute param received, ex.: '16:00'
@@ -27,6 +37,7 @@ function scheduler(time, triggerThis) {
 
 	// get the interval in ms from now to the timepoint when to trigger email sending
 	const firstTriggerAfterMs = startTime.getTime() - now.getTime();
+	console.log(firstTriggerAfterMs);
 
 	// trigger the function triggerThis() at the timepoint
 	// create setInterval when the timepoint is reached to trigger it every day at this timepoint
@@ -40,16 +51,18 @@ function scrapeFood(toWhere) {
 	rp(url)
 	  .then(function(html){
 	    //success
-	    let vilde = $('.offer','#2087492733', html).text();
-	    let rp9 = $('.offer','#2087492794', html).text();
-	    let bigben = $('.offer','#27', html).text();
-	    let tartukohvik = $('.offer','#36', html).text();
-	    let illegaard = $('.offer','#2087492610', html).text();
-	    let foods = "1 Vilde ja Vine: " + vilde + "\n" +
-	    "2 Pubi RP9: " + rp9 + "\n" +
-	    "3 Big Ben Pubi: " + bigben + "\n" + 
-	    "4 Tartu Kohvik: " + tartukohvik + "\n" + 
-	    "5 Illegaard: " + illegaard + "\n";
+	    let foodCounter = 1, foods = "", foodInOffer = "";
+		for (var key in foodProviders) {
+			if (foodProviders.hasOwnProperty(key)) {
+			  name = foodProviders[key].name;
+			  divId = foodProviders[key].divId;
+			  foodInOffer = $('.offer',divId, html).text();
+			  if (foodInOffer == "") continue;
+			  foods = foods + foodCounter + " *" + name + "* " + foodInOffer + "\n";
+			  foodCounter++;
+			}
+			if (foodCounter > 5) break;
+		}
 	    console.log("Scraped food");
 	    if (toWhere == "Email") {
 	        sendEmail(foods);
@@ -72,7 +85,7 @@ function logAndSendDataToFleep(foods) {
         method: 'POST',
         uri: 'https://fleep.io/api/account/login',
         body: {
-            "email": fleepUser, "password": fleepUser
+            "email": fleepUser, "password": fleepPassword
         },
         json: true,
         transform: _include_headers,
@@ -104,10 +117,12 @@ function sendMessageToFleep(ticket,cookie,foods) {
 
      var sendMessageOptions = {
          method: 'POST',
-         uri: 'https://fleep.io/api/message/send/' + fleepConversationId,
+         //uri: 'https://fleep.io/api/message/send/' + fleepConversationId, //Old option to send direct messages
+         uri: 'https://fleep.io/hook/' + fleepWebHookId,
          body: {
          "ticket": ticket,
-         "message": foods
+         "message": foods,
+         "user": 'Lõunad'
          },
          json: true,
          jar: cookiejar
